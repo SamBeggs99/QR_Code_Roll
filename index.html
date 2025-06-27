@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You've Been Rick Rolled!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars initially */
+            position: relative;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            opacity: 0; /* Hidden initially */
+            transform: translateY(20px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+            margin-top: 20px; /* Space from top */
+        }
+        .container.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .rick-roll-gif-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            opacity: 0; /* Hidden initially, will become 1 when GIF plays */
+            transition: opacity 2s ease-out;
+            pointer-events: none; /* Disable interactions when not active */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black; /* Black background for the GIF */
+        }
+        .rick-roll-gif-container.active {
+            opacity: 1;
+            pointer-events: auto; /* Enable interactions when active */
+        }
+        .rick-roll-gif-container.hidden {
+            opacity: 0;
+            pointer-events: none; /* Disable interactions when hidden */
+        }
+        .rick-roll-gif-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Ensure the GIF fits within the screen */
+        }
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .message {
+            font-size: 1.1rem;
+            color: #555;
+            margin-top: 1.5rem;
+            line-height: 1.6;
+        }
+        .start-button-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            z-index: 10000; /* Above everything else */
+            transition: opacity 0.5s ease-out;
+            text-align: center; /* Center text within container */
+        }
+        .start-button-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .prize-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #22c55e; /* Green color for prize */
+            margin-bottom: 1.5rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .start-button {
+            background: linear-gradient(145deg, #6366f1, #4f46e5); /* Indigo gradient */
+            color: white;
+            padding: 1.25rem 2.5rem;
+            border-radius: 9999px; /* Fully rounded */
+            font-size: 1.5rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 6px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .start-button:hover:not(:disabled) {
+            background: linear-gradient(145deg, #4f46e5, #6366f1);
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 8px 8px rgba(0, 0, 0, 0.15);
+        }
+        .start-button:active:not(:disabled) {
+            transform: scale(0.98);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15), 0 3px 3px rgba(0, 0, 0, 0.08);
+        }
+        .start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #a0aec0;
+            box-shadow: none;
+        }
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: #666;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .loading-text.show {
+            opacity: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            .container {
+                padding: 1.5rem;
+            }
+            .prize-text {
+                font-size: 1.5rem;
+            }
+            .start-button {
+                font-size: 1.2rem;
+                padding: 1rem 2rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .title {
+                font-size: 1.75rem;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .message {
+                font-size: 1rem;
+            }
+            .prize-text {
+                font-size: 1.2rem;
+            }
+            .start-button {
+                font-size: 1rem;
+                padding: 0.8rem 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startButtonContainer" class="start-button-container">
+        <p class="prize-text">Congratulations! You've been selected to win:</p>
+        <button id="startButton" class="start-button" disabled>Loading...</button>
+        <p id="loadingText" class="loading-text">Please wait while the prize loads...</p>
+    </div>
+
+    <div id="rickRollGifContainer" class="rick-roll-gif-container">
+        <!-- Rick Roll GIF will be displayed here -->
+        <img src="https://media.tenor.com/x8v1oNUOmg4AAAAd/rickroll-roll.gif" alt="Rick Roll GIF">
+    </div>
+
+    <!-- Audio element for the Rick Roll sound effect -->
+    <audio id="rickRollAudio" loop preload="auto">
+        <source src="https://raw.githubusercontent.com/SamBeggs99/QR_Code_Roll/main/Rick-Roll-Sound-Effect.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div id="contentContainer" class="container">
+        <h1 class="title">You've Been Rick Rolled!</h1>
+        <p class="message">
+            Surprise!
+        </p>
+        <div class="image-container mt-6">
+            <!-- Your QR Scanning image -->
+            <img src="https://raw.githubusercontent.com/SamBeggs99/QR_Code_Roll/main/QR%20Scanning.png" alt="QR Scanning Safety">
+        </div>
+        <p class="message mt-6 text-sm text-gray-600">
+            (This page was made for fun. Please be careful about scanning random QR codes!)
+        </p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButtonContainer = document.getElementById('startButtonContainer');
+            const startButton = document.getElementById('startButton');
+            const loadingText = document.getElementById('loadingText');
+            const rickRollGifContainer = document.getElementById('rickRollGifContainer');
+            const contentContainer = document.getElementById('contentContainer');
+            const rickRollAudio = document.getElementById('rickRollAudio');
+
+            // Duration for the Rick Roll GIF/sound to display before hiding (in milliseconds)
+            // Adjust this value as needed. 5000ms = 5 seconds.
+            const rickRollDuration = 5000;
+
+            // Show loading text initially
+            loadingText.classList.add('show');
+
+            // Listen for the audio to be ready to play through
+            // This event is more reliable for knowing when the audio is buffered enough to play
+            rickRollAudio.addEventListener('canplaythrough', () => {
+                startButton.disabled = false; // Enable the button
+                startButton.textContent = '1,000 Dollars! Click Here!'; // Change button text
+                loadingText.classList.remove('show'); // Hide loading text
+            });
+
+            // Fallback for older browsers or if canplaythrough doesn't fire as expected
+            // This ensures the button eventually enables even if canplaythrough is slow/buggy
+            setTimeout(() => {
+                if (startButton.disabled) {
+                    startButton.disabled = false;
+                    startButton.textContent = '1,000 Dollars! Click Here!';
+                    loadingText.classList.remove('show');
+                }
+            }, 3000); // Enable button after 3 seconds if not already enabled by canplaythrough
+
+            startButton.addEventListener('click', () => {
+                // Hide the start button container
+                startButtonContainer.classList.add('hidden');
+
+                // Show the GIF container
+                rickRollGifContainer.classList.add('active');
+
+                // Play the audio
+                rickRollAudio.play().catch(error => {
+                    console.warn("Audio playback failed after click (e.g., by extensions):", error);
+                    // Even with a click, some extensions can block. No further code workaround.
+                });
+
+                // Hide the GIF and stop the audio after the duration
+                setTimeout(() => {
+                    rickRollGifContainer.classList.remove('active'); // Hide GIF
+                    rickRollGifContainer.classList.add('hidden'); // Ensure it's fully hidden
+                    rickRollAudio.pause(); // Pause the audio
+                    rickRollAudio.currentTime = 0; // Reset audio to beginning
+                    contentContainer.classList.add('show'); // Show the main content
+                    document.body.style.overflow = 'auto'; // Re-enable scrolling if content is long
+                }, rickRollDuration);
+            });
+        });
+    </script>
+</body>
+</html>
